@@ -3,6 +3,9 @@ from datetime import datetime
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from app.client.engsel import get_balance, get_tiering_info
 from app.service.auth import AuthInstance
@@ -128,6 +131,24 @@ MENU_ITEMS = [
 ]
 
 
+def _fix_surrogates(x):
+    """
+    Fix string yang berisi UTF-16 surrogate pairs (mis. '\\ud83d\\udd25')
+    supaya jadi unicode/emoji normal (mis. '🔥'), sehingga aman di-encode UTF-8.
+    """
+    if isinstance(x, str):
+        return x.encode("utf-16", "surrogatepass").decode("utf-16")
+    if isinstance(x, list):
+        return [_fix_surrogates(i) for i in x]
+    if isinstance(x, dict):
+        return {k: _fix_surrogates(v) for k, v in x.items()}
+    return x
+
+
+# IMPORTANT: sanitize MENU_ITEMS agar tidak bikin UnicodeEncodeError
+MENU_ITEMS = _fix_surrogates(MENU_ITEMS)
+
+
 def build_profile():
     active_user = AuthInstance.get_active_user()
     if not active_user:
@@ -136,23 +157,30 @@ def build_profile():
     balance_data = get_balance(AuthInstance.api_key, active_user["tokens"]["id_token"])
     balance_remaining = balance_data.get("remaining")
     balance_expired_at = balance_data.get("expired_at")
-    point_info = "Points: N/A | Tier: N/A"
 
-    if active_user["subscription_type"] == "PREPAID":
+    point_info = "Points: N/A | Tier: N/A"
+    if active_user.get("subscription_type") == "PREPAID":
         tiering_data = get_tiering_info(AuthInstance.api_key, active_user["tokens"])
         tier = tiering_data.get("tier", 0)
         current_point = tiering_data.get("current_point", 0)
         point_info = f"Points: {current_point} | Tier: {tier}"
 
-    expired_at_dt = datetime.fromtimestamp(balance_expired_at).strftime("%Y-%m-%d")
+    expired_at_dt = (
+        datetime.fromtimestamp(balance_expired_at).strftime("%Y-%m-%d")
+        if balance_expired_at
+        else "-"
+    )
 
-    return {
-        "number": active_user["number"],
-        "subscription_type": active_user["subscription_type"],
+    profile = {
+        "number": active_user.get("number"),
+        "subscription_type": active_user.get("subscription_type"),
         "balance": balance_remaining,
         "balance_expired_at": expired_at_dt,
         "point_info": point_info,
     }
+
+    # sanitize juga (jaga-jaga kalau data dari API ada karakter aneh)
+    return _fix_surrogates(profile)
 
 
 @app.get("/", response_class=HTMLResponse)
