@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MyXL Web Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              "xl-dark": "#0b0f1f",
+              "xl-surface": "#141a2e",
+              "xl-accent": "#4fd1ff",
+              "xl-pink": "#ff6aa6",
+            },
+          },
+        },
+      };
+    </script>
+  </head>
+  <body class="bg-xl-dark text-white">
+    <div class="min-h-screen flex">
+      <aside
+        id="sidebar"
+        class="w-72 bg-xl-surface/90 border-r border-white/10 hidden lg:flex flex-col"
+      >
+        <div class="p-6 border-b border-white/10">
+          <div class="flex items-center gap-3">
+            <div
+              class="h-12 w-12 rounded-2xl bg-gradient-to-br from-xl-accent to-xl-pink flex items-center justify-center text-xl font-bold"
+            >
+              XL
+            </div>
+            <div>
+              <p class="text-lg font-semibold">MyXL Command Center</p>
+              <p class="text-xs text-white/60">Interactive Web UI</p>
+            </div>
+          </div>
+        </div>
+        <nav class="flex-1 overflow-y-auto p-4 space-y-2">
+          {% for item in menu_items %}
+          <button
+            type="button"
+            data-menu="{{ item.id }}"
+            class="menu-button w-full text-left flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition hover:bg-white/10"
+          >
+            <span class="text-lg">{{ item.icon }}</span>
+            <div>
+              <p class="font-semibold">{{ item.label }}</p>
+              <p class="text-xs text-white/60">{{ item.description }}</p>
+            </div>
+          </button>
+          {% endfor %}
+        </nav>
+        <div class="p-4 border-t border-white/10">
+          <button
+            id="logoutButton"
+            class="w-full rounded-xl bg-white/10 py-3 text-sm font-semibold hover:bg-white/20"
+          >
+            Keluar
+          </button>
+        </div>
+      </aside>
+
+      <div class="flex-1 flex flex-col">
+        <header
+          class="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-xl-surface/60"
+        >
+          <div class="flex items-center gap-3">
+            <button
+              id="openSidebar"
+              class="lg:hidden rounded-xl border border-white/20 px-3 py-2"
+              aria-label="Open menu"
+            >
+              ☰
+            </button>
+            <div>
+              <h1 class="text-xl font-semibold">Halo,</h1>
+              <p class="text-sm text-white/60">
+                {{ profile.number if profile else "Belum login" }}
+                · {{ profile.subscription_type if profile else "" }}
+              </p>
+            </div>
+          </div>
+          <div class="flex items-center gap-4">
+            <button
+              class="rounded-xl bg-white/10 px-4 py-2 text-sm font-semibold hover:bg-white/20"
+            >
+              Sync Data
+            </button>
+            <div
+              class="h-10 w-10 rounded-full bg-gradient-to-br from-xl-accent to-xl-pink"
+            ></div>
+          </div>
+        </header>
+
+        <main class="flex-1 p-6 space-y-6">
+          <section class="grid gap-4 md:grid-cols-3">
+            <div class="rounded-2xl bg-xl-surface p-5 shadow-lg">
+              <p class="text-sm text-white/60">Nomor</p>
+              <p class="text-lg font-semibold">
+                {{ profile.number if profile else "628xxxx" }}
+              </p>
+            </div>
+            <div class="rounded-2xl bg-xl-surface p-5 shadow-lg">
+              <p class="text-sm text-white/60">Pulsa</p>
+              <p class="text-lg font-semibold">
+                Rp {{ profile.balance if profile else "0" }}
+              </p>
+              <p class="text-xs text-white/50">
+                Aktif sampai {{ profile.balance_expired_at if profile else "-" }}
+              </p>
+            </div>
+            <div class="rounded-2xl bg-xl-surface p-5 shadow-lg">
+              <p class="text-sm text-white/60">Loyalty</p>
+              <p class="text-lg font-semibold">
+                {{ profile.point_info if profile else "Points: N/A | Tier: N/A" }}
+              </p>
+            </div>
+          </section>
+
+          <section class="grid gap-4 lg:grid-cols-2">
+            <div class="rounded-3xl bg-xl-surface p-6">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-sm text-white/60">Menu Terpilih</p>
+                  <h2
+                    id="menuTitle"
+                    class="text-2xl font-semibold mt-1"
+                  >
+                    Dashboard
+                  </h2>
+                </div>
+                <span
+                  id="menuIcon"
+                  class="text-3xl"
+                  aria-hidden="true"
+                >
+                  \ud83d\udcbb
+                </span>
+              </div>
+              <p id="menuDescription" class="mt-4 text-white/60">
+                Pilih menu di sebelah kiri untuk mulai menggunakan fitur MyXL.
+              </p>
+              <div class="mt-6 flex flex-wrap gap-3">
+                <button
+                  id="primaryAction"
+                  class="rounded-xl bg-gradient-to-r from-xl-accent to-xl-pink px-5 py-3 text-sm font-semibold text-xl-dark"
+                >
+                  Mulai
+                </button>
+                <button
+                  class="rounded-xl border border-white/20 px-5 py-3 text-sm font-semibold"
+                >
+                  Lihat Detail
+                </button>
+              </div>
+            </div>
+            <div class="rounded-3xl bg-xl-surface p-6 space-y-4">
+              <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold">Quick Actions</h3>
+                <span class="text-xs text-white/50">Tap untuk eksekusi</span>
+              </div>
+              <div class="grid gap-3 sm:grid-cols-2">
+                <button
+                  class="quick-action rounded-2xl bg-white/5 p-4 text-left hover:bg-white/10"
+                  data-menu="hot"
+                >
+                  <p class="text-sm text-white/60">Promo</p>
+                  <p class="font-semibold">Beli Paket Hot</p>
+                </button>
+                <button
+                  class="quick-action rounded-2xl bg-white/5 p-4 text-left hover:bg-white/10"
+                  data-menu="packages"
+                >
+                  <p class="text-sm text-white/60">Cek</p>
+                  <p class="font-semibold">Paket Saya</p>
+                </button>
+                <button
+                  class="quick-action rounded-2xl bg-white/5 p-4 text-left hover:bg-white/10"
+                  data-menu="transactions"
+                >
+                  <p class="text-sm text-white/60">Histori</p>
+                  <p class="font-semibold">Riwayat Transaksi</p>
+                </button>
+                <button
+                  class="quick-action rounded-2xl bg-white/5 p-4 text-left hover:bg-white/10"
+                  data-menu="notifications"
+                >
+                  <p class="text-sm text-white/60">Inbox</p>
+                  <p class="font-semibold">Notifikasi</p>
+                </button>
+              </div>
+              <div class="rounded-2xl border border-white/10 p-4">
+                <p class="text-xs text-white/50">Status Sistem</p>
+                <p class="mt-1 text-sm">
+                  Semua layanan berjalan normal. Terakhir sinkron: 2 menit lalu.
+                </p>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <div
+      id="mobileSidebar"
+      class="fixed inset-0 bg-black/60 hidden lg:hidden"
+    >
+      <div
+        class="absolute left-0 top-0 h-full w-72 bg-xl-surface p-4 flex flex-col"
+      >
+        <div class="flex items-center justify-between mb-4">
+          <p class="text-lg font-semibold">Menu</p>
+          <button
+            id="closeSidebar"
+            class="rounded-lg border border-white/20 px-3 py-1"
+          >
+            Tutup
+          </button>
+        </div>
+        <nav class="flex-1 overflow-y-auto space-y-2">
+          {% for item in menu_items %}
+          <button
+            type="button"
+            data-menu="{{ item.id }}"
+            class="menu-button w-full text-left flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition hover:bg-white/10"
+          >
+            <span class="text-lg">{{ item.icon }}</span>
+            <div>
+              <p class="font-semibold">{{ item.label }}</p>
+              <p class="text-xs text-white/60">{{ item.description }}</p>
+            </div>
+          </button>
+          {% endfor %}
+        </nav>
+      </div>
+    </div>
+
+    <script>
+      const menuItems = {{ menu_items | tojson }};
+      const menuTitle = document.getElementById("menuTitle");
+      const menuDescription = document.getElementById("menuDescription");
+      const menuIcon = document.getElementById("menuIcon");
+      const primaryAction = document.getElementById("primaryAction");
+      const mobileSidebar = document.getElementById("mobileSidebar");
+      const openSidebar = document.getElementById("openSidebar");
+      const closeSidebar = document.getElementById("closeSidebar");
+
+      const menuById = new Map(menuItems.map((item) => [item.id, item]));
+
+      function selectMenu(menuId) {
+        const item = menuById.get(menuId);
+        if (!item) return;
+        menuTitle.textContent = item.label;
+        menuDescription.textContent = item.description;
+        menuIcon.textContent = item.icon;
+        primaryAction.textContent = `Buka ${item.label}`;
+        document
+          .querySelectorAll(".menu-button")
+          .forEach((button) => {
+            if (button.dataset.menu === menuId) {
+              button.classList.add("bg-white/10");
+            } else {
+              button.classList.remove("bg-white/10");
+            }
+          });
+      }
+
+      document.querySelectorAll(".menu-button").forEach((button) => {
+        button.addEventListener("click", () => {
+          selectMenu(button.dataset.menu);
+          if (mobileSidebar) {
+            mobileSidebar.classList.add("hidden");
+          }
+        });
+      });
+
+      document.querySelectorAll(".quick-action").forEach((button) => {
+        button.addEventListener("click", () => {
+          selectMenu(button.dataset.menu);
+        });
+      });
+
+      if (openSidebar && mobileSidebar) {
+        openSidebar.addEventListener("click", () => {
+          mobileSidebar.classList.remove("hidden");
+        });
+      }
+
+      if (closeSidebar && mobileSidebar) {
+        closeSidebar.addEventListener("click", () => {
+          mobileSidebar.classList.add("hidden");
+        });
+      }
+
+      selectMenu("account");
+    </script>
+  </body>
+</html>
